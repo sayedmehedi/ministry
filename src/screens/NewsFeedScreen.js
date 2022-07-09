@@ -45,11 +45,15 @@ const NewsFeedScreen = ({navigation}) => {
           <Underline width={170} />
         </View>
 
-        <FlatList
-          data={data}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
-        />
+        {isLoading ? (
+          <Text>Loading...</Text>
+        ) : (
+          <FlatList
+            data={data}
+            renderItem={renderItem}
+            keyExtractor={item => item.id}
+          />
+        )}
       </View>
     </SafeAreaView>
   );

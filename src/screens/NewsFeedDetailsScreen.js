@@ -6,23 +6,21 @@ import {
   useGetBlogDetails,
 } from '../hooks/newsfeed';
 import {
-  StyleSheet,
   View,
-  TextInput,
-  TouchableOpacity,
-  Platform,
   Text,
   Image,
+  Platform,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
 } from 'react-native';
+import {FlatList} from 'react-native-gesture-handler';
+import Feather from 'react-native-vector-icons/Feather';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import KeyboardAvoidingView from 'react-native/Libraries/Components/Keyboard/KeyboardAvoidingView';
-import {FlatList} from 'react-native-gesture-handler';
-import AntDesign from 'react-native-vector-icons/AntDesign';
-import Foundation from 'react-native-vector-icons/Foundation';
-import Entypo from 'react-native-vector-icons/Entypo';
-import Feather from 'react-native-vector-icons/Feather';
 
-const ReactionAndCommentStats = ({commentId, blogRefetcher}) => {
+const ReactionAndCommentStats = ({commentId, onDeleted}) => {
   const [reacted, setReacted] = React.useState(false);
   const [showCommentOptions, setShowCommentOptions] = React.useState(false);
 
@@ -35,7 +33,7 @@ const ReactionAndCommentStats = ({commentId, blogRefetcher}) => {
 
   const handleDeleteComment = async () => {
     await deleteComment(commentId);
-    blogRefetcher();
+    onDeleted?.();
   };
 
   React.useEffect(() => {
@@ -99,7 +97,7 @@ const ReactionAndCommentStats = ({commentId, blogRefetcher}) => {
   );
 };
 
-const CommentCard = ({data, blogRefetcher}) => {
+const CommentCard = ({data, onDeleted}) => {
   return (
     <View>
       <View
@@ -122,21 +120,31 @@ const CommentCard = ({data, blogRefetcher}) => {
         </View>
       </View>
       <View>
-        <ReactionAndCommentStats
-          commentId={data?.id}
-          blogRefetcher={blogRefetcher}
-        />
+        <ReactionAndCommentStats commentId={data?.id} onDeleted={onDeleted} />
       </View>
     </View>
   );
 };
 
-const CommentCreateInput = ({onSubmit, isSubmiting}) => {
+const CommentCreateInput = ({onCommentCreated, blogId}) => {
   const [commentText, setCommentText] = React.useState('');
 
   const onChangeCommentText = text => {
     setCommentText(text);
   };
+
+  const {
+    error,
+    mutate,
+    isError,
+    isLoading: isCreatingComment,
+  } = useCreateComment();
+
+  React.useEffect(() => {
+    if (isError) {
+      console.log('comment create error', error);
+    }
+  }, [isError]);
 
   return (
     <View style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
@@ -153,10 +161,15 @@ const CommentCreateInput = ({onSubmit, isSubmiting}) => {
 
       <View>
         <TouchableOpacity
-          disabled={isSubmiting}
+          disabled={isCreatingComment}
           onPress={async () => {
-            await onSubmit(commentText);
+            await mutate({
+              blog_id: blogId,
+              text: commentText,
+            });
             setCommentText('');
+
+            onCommentCreated?.();
           }}>
           <MaterialCommunityIcons name="send" size={18} color={'#0077B6'} />
         </TouchableOpacity>
@@ -167,43 +180,14 @@ const CommentCreateInput = ({onSubmit, isSubmiting}) => {
 
 export default function NewsFeedDetailsScreen({route}) {
   const {
-    error,
-    mutate,
-    isError,
-    isLoading: isCreatingComment,
-  } = useCreateComment();
-
-  const {
     data,
     refetch,
     isLoading: isLoadingBlogDetails,
   } = useGetBlogDetails(route.params.id);
 
-  const createComment = async commentText => {
-    await mutate({
-      text: commentText,
-      blog_id: route.params.id,
-    });
-    console.log('will refetch blog details by id', route.params.id);
-    refetch();
-  };
-
-  React.useEffect(() => {
-    if (isError) {
-      console.log('comment create error', error);
-    }
-  }, [isError]);
-
   const renderItem = ({item}) => (
     <View style={{marginBottom: 7}}>
-      <CommentCard
-        data={item}
-        blogRefetcher={refetch}
-        onCommentOptionsPressed={() => {
-          setCommentId(item.id);
-          setShowCommentOptions(true);
-        }}
-      />
+      <CommentCard data={item} onDeleted={refetch} />
     </View>
   );
 
@@ -212,10 +196,7 @@ export default function NewsFeedDetailsScreen({route}) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <NewsCard data={data} />
 
-      <CommentCreateInput
-        onSubmit={createComment}
-        isSubmiting={isCreatingComment}
-      />
+      <CommentCreateInput onCommentCreated={refetch} blogId={route.params.id} />
 
       <Text style={{fontWeight: 'bold', fontSize: 18, marginTop: 10}}>
         All comments

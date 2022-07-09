@@ -1,57 +1,97 @@
 import React from 'react';
-import {baseURL} from '../../baseURL.json';
 import axios from 'axios';
+import {baseURL} from '../../baseURL.json';
 
 export const useGetBlogs = () => {
-  const [blogs, setBlogs] = React.useState([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [data, setData] = React.useState([]);
+  const [error, setError] = React.useState(null);
+  const [isError, setIsError] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [isSuccess, setIsSuccess] = React.useState(false);
+  const controllerRef = React.useRef(new AbortController());
 
-  const getBlogs = async () => {
+  const getBlogs = React.useCallback(async () => {
     try {
-      const response = await axios.get(`${baseURL}/user/blogs`);
+      setIsLoading(true);
+
+      const response = await axios.get(`${baseURL}/user/blogs`, {
+        signal: controllerRef.current.signal,
+      });
       const blogs = response.data;
 
-      setBlogs(blogs);
+      setError(null);
+      setData(blogs);
+      setIsError(false);
+      setIsSuccess(true);
     } catch (error) {
       console.log('error on getting blogs', error);
+
+      setError(error);
+      setIsError(true);
+      setIsSuccess(false);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  const refetch = React.useCallback(() => {
+    console.log('refetching blog details');
+    getBlogs();
+  }, [getBlogs]);
 
   React.useEffect(() => {
     getBlogs();
-  }, []);
 
-  /**
-   * @type {{data: {id: number; subject: string; reacted: boolean; photo: string; created_at: string}[], isLoading: boolean}} data
-   */
-  const data = {
-    data: blogs,
+    return () => {
+      controllerRef.current.abort();
+    };
+  }, [getBlogs]);
+
+  return {
+    data,
+    error,
+    refetch,
+    isError,
+    isSuccess,
     isLoading,
   };
-
-  return data;
 };
 
 export const useGetBlogDetails = id => {
-  const [blog, setBlog] = React.useState(null);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [data, setData] = React.useState(null);
+  const [error, setError] = React.useState(null);
+  const [isError, setIsError] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [isSuccess, setIsSuccess] = React.useState(false);
+  const controllerRef = React.useRef(new AbortController());
 
-  const getBlogDetails = React.useCallback(async id => {
-    if (!!id) {
-      try {
-        const response = await axios.get(`${baseURL}/user/blogs/${id}`);
-        const blog = response.data;
+  const getBlogDetails = React.useCallback(
+    async id => {
+      if (!!id) {
+        try {
+          setIsLoading(true);
 
-        setBlog(blog);
-      } catch (error) {
-        console.log('error on getting blog by id', error);
-      } finally {
-        setIsLoading(false);
+          const response = await axios.get(`${baseURL}/user/blogs/${id}`, {
+            signal: controllerRef.current.signal,
+          });
+          const blog = response.data;
+
+          setData(blog);
+          setError(null);
+          setIsError(false);
+          setIsSuccess(true);
+        } catch (error) {
+          console.log('error on getting blog by id', error);
+          setError(error);
+          setIsError(true);
+          setIsSuccess(false);
+        } finally {
+          setIsLoading(false);
+        }
       }
-    }
-  });
+    },
+    [id],
+  );
 
   const refetch = React.useCallback(() => {
     console.log('refetching blog details');
@@ -60,9 +100,13 @@ export const useGetBlogDetails = id => {
 
   React.useEffect(() => {
     getBlogDetails(id);
-  }, [id]);
 
-  return {data: blog, isLoading, refetch};
+    return () => {
+      controllerRef.current.abort();
+    };
+  }, [getBlogDetails]);
+
+  return {data, isLoading, refetch, error, isError, isSuccess};
 };
 
 export const useCreateComment = () => {
@@ -73,24 +117,22 @@ export const useCreateComment = () => {
   const [isLoading, setIsLoading] = React.useState(false);
 
   const mutate = React.useCallback(async data => {
-    setData(null);
-    setError(null);
-    setIsError(false);
-    setIsSuccess(false);
-
     try {
       setIsLoading(true);
       const response = await axios.post(`${baseURL}/user/comments`, data);
       const comment = response.data;
 
       console.log('comment created', comment);
+
+      setError(null);
       setData(comment);
+      setIsError(false);
       setIsSuccess(true);
     } catch (error) {
       console.log('error on creating comment by id', error);
+      setError(error);
       setIsError(true);
       setIsSuccess(false);
-      setError(error);
     } finally {
       setIsLoading(false);
     }
@@ -114,24 +156,21 @@ export const useDeleteComment = () => {
   const [isLoading, setIsLoading] = React.useState(false);
 
   const mutate = React.useCallback(async id => {
-    setData(null);
-    setError(null);
-    setIsError(false);
-    setIsSuccess(false);
-
     try {
       setIsLoading(true);
       const response = await axios.delete(`${baseURL}/user/comments/${id}`);
       const comment = response.data;
 
       console.log('comment deleted', comment);
+      setError(null);
       setData(comment);
       setIsSuccess(true);
+      setIsError(false);
     } catch (error) {
       console.log('error on deleting comment by id', error);
+      setError(error);
       setIsError(true);
       setIsSuccess(false);
-      setError(error);
     } finally {
       setIsLoading(false);
     }
@@ -139,8 +178,8 @@ export const useDeleteComment = () => {
 
   return {
     data,
-    mutate,
     error,
+    mutate,
     isError,
     isSuccess,
     isLoading,
