@@ -12,7 +12,7 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 
-const Message = ({time, isLeft, message, onSwipe}) => {
+const Message = ({time='1/2/3', isLeft=false, message, onSwipe}) => {
   const startingPosition = 0;
   const x = useSharedValue(startingPosition);
 

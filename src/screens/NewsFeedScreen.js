@@ -18,7 +18,7 @@ import {NewsCard} from '../components/NewsFeed';
 import {useGetBlogs} from '../hooks/newsfeed';
 
 const NewsFeedScreen = ({navigation}) => {
-  const {data, isLoading} = useGetBlogs();
+  const {data, isLoading,refetch} = useGetBlogs();
 
   const renderItem = ({item}) => (
     <TouchableOpacity
@@ -29,7 +29,7 @@ const NewsFeedScreen = ({navigation}) => {
           });
         }
       }}>
-      <NewsCard data={item} />
+      <NewsCard data={item} onReacted={refetch}/>
     </TouchableOpacity>
   );
 

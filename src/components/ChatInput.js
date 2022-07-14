@@ -1,4 +1,5 @@
-import React, {useState} from 'react';
+
+import React, {useState,useEffect} from 'react';
 import {
   View,
   Text,
@@ -13,15 +14,53 @@ import Animated, {
   useAnimatedStyle,
 } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import axios from 'axios';
 
-const ChatInput = ({reply, closeReply, isLeft, username}) => {
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const ChatInput = ({reply, closeReply, isLeft, username,onMessageSend}) => {
   const [message, setMessage] = useState('');
   const height = useSharedValue(70);
+  const [token, setToken] = useState('');
+
+  useEffect(() => {
+    getToken();
+  }, [token]);
+  const getToken = () => {
+    AsyncStorage.getItem('token').then(value => {
+      if (value != null) {
+        setToken(value);
+      }
+      console.log('meehdi', value);
+    });
+  };
   const heightAnimatedStyle = useAnimatedStyle(() => {
     return {
       height: height.value,
     };
   });
+
+  const handlsendMessege = () => {
+    const api = 'https://minister-app.com/api/user/send-message';
+    const data = new FormData();
+    data.append('text',message);
+    //data.append('attachment',null);
+    axios.post(api,data,{
+      headers:{
+        Authorization: `Bearer ${token}`,
+        'Content-Type':'multipart/form-data',
+        'Accept':'*/*'
+      }
+    })
+    .then(res => {
+      console.log('le',res.data);
+      onMessageSend();
+      setMessage('');
+     
+    })
+    .catch(e => console.log(e));
+
+  }
 
   return (
     <Animated.View style={[styles.container, heightAnimatedStyle]}>
@@ -52,7 +91,9 @@ const ChatInput = ({reply, closeReply, isLeft, username}) => {
           onChangeText={text => setMessage(text)}
         />
 
-        <TouchableOpacity style={styles.sendButton}>
+        <TouchableOpacity
+        onPress={handlsendMessege}
+        style={styles.sendButton}>
           <Icon name={'send'} size={23} color={'white'} />
         </TouchableOpacity>
       </View>
