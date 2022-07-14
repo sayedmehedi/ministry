@@ -5,6 +5,8 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Foundation from 'react-native-vector-icons/Foundation';
 import Entypo from 'react-native-vector-icons/Entypo';
+import axios from 'axios';
+import {TouchableOpacity} from 'react-native-gesture-handler';
 
 export const NewsCard = ({data, onReacted}) => {
   return (

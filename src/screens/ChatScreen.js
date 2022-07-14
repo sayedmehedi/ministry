@@ -4,6 +4,9 @@ import {useGetMessages} from '../hooks/chat';
 import ChatInput from '../components/ChatInput';
 import ChatHeader from '../components/ChatHeader';
 import MessagesList from '../components/MessagesList';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import axios from 'axios';
 
 const ChatScreen = () => {
   const username = 'sayed mehedi hasan';
@@ -12,6 +15,7 @@ const ChatScreen = () => {
 
   const [reply, setReply] = useState('');
   const [isLeft, setIsLeft] = useState();
+  const [token, setToken] = useState('');
 
   const swipeToReply = (message, isLeft) => {
     setReply(message.length > 50 ? message.slice(0, 50) + '...' : message);

@@ -20,6 +20,7 @@ const ChatInput = ({reply, closeReply, isLeft, username, onSent}) => {
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState('');
   const height = useSharedValue(70);
+
   const heightAnimatedStyle = useAnimatedStyle(() => {
     return {
       height: height.value,
