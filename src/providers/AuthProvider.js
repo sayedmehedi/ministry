@@ -1,6 +1,6 @@
 import {View, Text} from 'react-native';
 import React from 'react';
-import axios from 'axios';
+import axios, {AxiosError} from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AuthContext = React.createContext({});
@@ -32,6 +32,33 @@ const AuthProvider = ({children}) => {
       axios.defaults.headers.common['Authorization'] = ``;
     }
   }, [token]);
+
+  React.useEffect(() => {
+    const interceptorId = axios.interceptors.response.use(
+      function (response) {
+        // Any status code that lie within the range of 2xx cause this function to trigger
+        // Do something with response data
+        return response;
+      },
+
+      /** @param {AxiosError} error*/
+      function (error) {
+        if (error.response) {
+          const {status} = error.response;
+
+          if (status === 401 || status === 419) {
+            setToken(null);
+          }
+        }
+
+        return Promise.reject(error);
+      },
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptorId);
+    };
+  }, []);
 
   React.useEffect(() => {
     (async () => {

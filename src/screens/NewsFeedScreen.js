@@ -1,24 +1,13 @@
-import {View, Text, SafeAreaView, StyleSheet, Image} from 'react-native';
 import React from 'react';
-
-import {baseURL} from '../../baseURL.json';
 import Header from '../components/Header';
-import Underline from '../components/Underline';
-import {
-  FlatList,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native-gesture-handler';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import AntDesign from 'react-native-vector-icons/AntDesign';
-import Foundation from 'react-native-vector-icons/Foundation';
-import Entypo from 'react-native-vector-icons/Entypo';
-import axios from 'axios';
-import {NewsCard} from '../components/NewsFeed';
 import {useGetBlogs} from '../hooks/newsfeed';
+import {NewsCard} from '../components/NewsFeed';
+import Underline from '../components/Underline';
+import {View, Text, SafeAreaView} from 'react-native';
+import {FlatList, TouchableOpacity} from 'react-native-gesture-handler';
 
 const NewsFeedScreen = ({navigation}) => {
-  const {data, isLoading,refetch} = useGetBlogs();
+  const {data, isLoading, refetch} = useGetBlogs();
 
   const renderItem = ({item}) => (
     <TouchableOpacity
@@ -29,7 +18,7 @@ const NewsFeedScreen = ({navigation}) => {
           });
         }
       }}>
-      <NewsCard data={item} onReacted={refetch}/>
+      <NewsCard data={item} onReacted={refetch} />
     </TouchableOpacity>
   );
 

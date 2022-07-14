@@ -1,7 +1,8 @@
-import React, {useEffect, useState} from 'react';
-import {View} from 'react-native';
-import ChatHeader from '../components/ChatHeader';
+import React, {useState,useEffect} from 'react';
+import {View, Text, ActivityIndicator} from 'react-native';
+import {useGetMessages} from '../hooks/chat';
 import ChatInput from '../components/ChatInput';
+import ChatHeader from '../components/ChatHeader';
 import MessagesList from '../components/MessagesList';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -10,22 +11,14 @@ import axios from 'axios';
 const ChatScreen = () => {
   const username = 'sayed mehedi hasan';
 
+  const {data: messages, isLoading, isError, error, refetch} = useGetMessages();
+
   const [reply, setReply] = useState('');
   const [isLeft, setIsLeft] = useState();
-  const [messages,setMessages] = useState([]);
-  const [token, setToken] = useState('');
+  //const [messages,setMessages] = useState([]);
+ // const [token, setToken] = useState('');
 
-  useEffect(() => {
-    getToken();
-  }, [token]);
-  const getToken = () => {
-    AsyncStorage.getItem('token').then(value => {
-      if (value != null) {
-        setToken(value);
-      }
-      console.log('meehdi', value);
-    });
-  };
+  
 
   const swipeToReply = (message, isLeft) => {
     setReply(message.length > 50 ? message.slice(0, 50) + '...' : message);
@@ -36,27 +29,11 @@ const ChatScreen = () => {
     setReply('');
   };
 
-  const getMessages = () => {
-    
-    const api = `https://minister-app.com/api/user/inbox`;
-    //console.log(data);
-  axios
-    .get(api, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    .then(res => {
-      console.log('re',res.data.data);
-      setMessages(res.data.data);
-     
-    })
-    .catch(e => console.log(e));
-  }
-  useEffect(()=>{
-    getMessages();
-
-  },[token])
+  React.useEffect(() => {
+    if (isError) {
+      alert(error);
+    }
+  }, [isError, error]);
 
   return (
     <View style={{flex: 1}}>
@@ -66,13 +43,19 @@ const ChatScreen = () => {
         picture="etest"
         onlineStatus={'Online'}
       />
-      <MessagesList messages={messages} onSwipeToReply={swipeToReply} />
+      {isLoading ? (
+       <View style={{flex:1,justifyContent:'center',alignItems:'center'}}>
+         <ActivityIndicator size={'large'} color={'blue'}/>
+        </View>
+      ) : (
+        <MessagesList onSwipeToReply={swipeToReply} messages={messages} />
+      )}
       <ChatInput
         reply={reply}
         isLeft={isLeft}
-        closeReply={closeReply}
+        onSent={refetch}
         username={username}
-        onMessageSend={getMessages}
+        closeReply={closeReply}
       />
     </View>
   );

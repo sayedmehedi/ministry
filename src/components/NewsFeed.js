@@ -1,5 +1,5 @@
-import React,{useEffect,useState} from 'react';
-import {useGetBlogDetails} from '../hooks/newsfeed';
+import React from 'react';
+import {useGetBlogDetails, useToggleBlogReaction} from '../hooks/newsfeed';
 import {View, Text, StyleSheet, Image} from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -8,9 +8,7 @@ import Entypo from 'react-native-vector-icons/Entypo';
 import axios from 'axios';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 
-export const NewsCard = ({data,onReacted}) => {
-
-  
+export const NewsCard = ({data, onReacted}) => {
   return (
     <View style={styles.personalProfileCard}>
       <View style={{padding: 10}}>
@@ -60,64 +58,53 @@ export const NewsCard = ({data,onReacted}) => {
           }}>
           {data?.description}
         </Text>
-        <ReactionAndCommentStats data={data} onReacted={onReacted}/>
+        <ReactionAndCommentStats data={data} onReacted={onReacted} />
       </View>
     </View>
   );
 };
 
+export const ReactionAndCommentStats = ({data, onReacted}) => {
+  const {data: blog} = useGetBlogDetails(data?.id);
+  const {mutate, isLoading, isError, error} = useToggleBlogReaction({
+    onReacted,
+  });
 
-
-export const ReactionAndCommentStats = ({data,onReacted}) => {
-  const {data: blog,isLoading,refetch} = useGetBlogDetails(data?.id);
-  console.log('blog',blog?.reacted);
-
-  const likedPressed = () => {
-    if(!isLoading)
-    {
-      const api = `https://minister-app.com/api/user/blogs/${data?.id}/toggle-react`;
-      //console.log(data);
-    axios
-      .get(api)
-      .then(res => {
-       onReacted();
-      })
-      .catch(e => console.log(e));
-
-    }else {
-      alert('')
-
+  React.useEffect(() => {
+    if (isError) {
+      alert(error);
     }
-    
-
-    
-  }
+  }, [isError, error]);
 
   return (
     <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          width: '40%',
-          justifyContent: 'space-between',
-        }}>
-
-          <TouchableOpacity
-          onPress={likedPressed}
-          >
+      <TouchableOpacity
+        onTouchEnd={e => {
+          e.stopPropagation();
+          e.preventDefault();
+        }}
+        onPress={e => {
+          mutate(data.id);
+        }}
+        disabled={isLoading}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            width: '40%',
+            justifyContent: 'space-between',
+          }}>
           <AntDesign
-          name="like1"
-          size={18}
-          color={data.reacted ? '#0077B6' :  'grey' }
-        />
-          </TouchableOpacity>
-        
-        <Text>{blog?.reactions.length ?? 0}</Text>
+            name="like1"
+            size={18}
+            color={!data?.reacted ? 'grey' : '#0077B6'}
+          />
+          <Text>{blog?.reactions.length ?? 0}</Text>
 
-        <Foundation name="comment" size={18} color={'#0077B6'} />
-        <Text>{blog?.comments.length ?? 0}</Text>
-      </View>
+          <Foundation name="comment" size={18} color={'#0077B6'} />
+          <Text>{blog?.comments.length ?? 0}</Text>
+        </View>
+      </TouchableOpacity>
       <Entypo name="share" size={18} color={'#0077B6'} />
     </View>
   );
