@@ -19,34 +19,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const ProfileScreen = ({navigation}) => {
   const [userInfo, setUserInfo] = useState();
   const [isLoading, setIsLoading] = useState(true);
-  const [token, setToken] = useState('');
+  
 
   useEffect(() => {
     const api = 'https://minister-app.com/api/user/profile';
     axios
-      .get(api, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      .get(api)
       .then(res => {
         console.log(res.data.name);
         setUserInfo(res.data);
         setIsLoading(false);
       })
       .catch(e => console.log(e));
-  }, [token]);
-  useEffect(() => {
-    getToken();
-  }, [token]);
-  const getToken = () => {
-    AsyncStorage.getItem('token').then(value => {
-      if (value != null) {
-        setToken(value);
-      }
-      console.log('meehdi', value);
-    });
-  };
+  }, []);
+ 
+
   return (
     <SafeAreaView style={{flex: 1}}>
       <LinearGradient

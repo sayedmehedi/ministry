@@ -21,6 +21,7 @@ const MessagesList = ({onSwipeToReply, messages}) => {
         <Message
           key={message.id}
           message={message.text}
+          attachment={message.attachment}
           onSwipe={onSwipeToReply}
           time={message.created_at}
           isLeft={message.senderable_type === 'App\\Models\\Admin'}

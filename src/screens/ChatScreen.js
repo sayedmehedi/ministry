@@ -1,5 +1,5 @@
-import React, {useState} from 'react';
-import {View, Text} from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {View, Text, ActivityIndicator} from 'react-native';
 import {useGetMessages} from '../hooks/chat';
 import ChatInput from '../components/ChatInput';
 import ChatHeader from '../components/ChatHeader';
@@ -15,7 +15,8 @@ const ChatScreen = () => {
 
   const [reply, setReply] = useState('');
   const [isLeft, setIsLeft] = useState();
-  const [token, setToken] = useState('');
+  //const [messages,setMessages] = useState([]);
+  // const [token, setToken] = useState('');
 
   const swipeToReply = (message, isLeft) => {
     setReply(message.length > 50 ? message.slice(0, 50) + '...' : message);
@@ -41,7 +42,9 @@ const ChatScreen = () => {
         onlineStatus={'Online'}
       />
       {isLoading ? (
-        <Text>Loading...</Text>
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+          <ActivityIndicator size={'large'} color={'blue'} />
+        </View>
       ) : (
         <MessagesList onSwipeToReply={swipeToReply} messages={messages} />
       )}

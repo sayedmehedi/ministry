@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import DocumentPicker from 'react-native-document-picker';
 import {
   View,
@@ -20,7 +20,6 @@ const ChatInput = ({reply, closeReply, isLeft, username, onSent}) => {
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState('');
   const height = useSharedValue(70);
-
   const heightAnimatedStyle = useAnimatedStyle(() => {
     return {
       height: height.value,

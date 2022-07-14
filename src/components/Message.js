@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
+import {View, Text, StyleSheet,Image} from 'react-native';
 import {
   FlingGestureHandler,
   Directions,
@@ -12,7 +12,7 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 
-const Message = ({time='1/2/3', isLeft=false, message, onSwipe}) => {
+const Message = ({time='1/2/3', isLeft=false, message, onSwipe,attachment}) => {
   const startingPosition = 0;
   const x = useSharedValue(startingPosition);
 
@@ -55,25 +55,37 @@ const Message = ({time='1/2/3', isLeft=false, message, onSwipe}) => {
   });
 
   return (
-    <FlingGestureHandler
-      direction={isLeft ? Directions.RIGHT : Directions.LEFT}
-      onGestureEvent={eventHandler}
-      onHandlerStateChange={({nativeEvent}) => {
-        if (nativeEvent.state === State.ACTIVE) {
-          onSwipe(message, isLeft);
-        }
-      }}>
-      <Animated.View style={[styles.container, uas]}>
+    <React.Fragment>
+  
+     
+      <View style={[styles.container, uas]}>
         <View style={[styles.messageContainer, isOnLeft('messageContainer')]}>
+          {!!message && 
           <View style={styles.messageView}>
             <Text style={[styles.message, isOnLeft('message')]}>{message}</Text>
           </View>
+          
+          }
+          
           <View style={styles.timeView}>
-            <Text style={[styles.time, isOnLeft('time')]}>{time}</Text>
+            <Text style={[styles.time, isOnLeft('time')]}>{new Date(time).toLocaleDateString()}</Text>
           </View>
         </View>
-      </Animated.View>
-    </FlingGestureHandler>
+      </View>
+      {
+            !!attachment &&
+            <Image
+            source={{uri:attachment}}
+            style={{
+             height:100,
+             width:100,
+             marginLeft: isLeft? 0: 'auto'
+            }}
+            />
+          }
+     
+    
+     </React.Fragment>
   );
 };
 

@@ -77,8 +77,18 @@ export const useSendMessage = ({onSent} = {onSent: undefined}) => {
       try {
         setIsLoading(true);
         const formData = new FormData();
-        formData.append('text', data.text);
-        formData.append('attachment', data.file);
+        
+        if(!!data.text)
+        {
+          formData.append('text', data.text);
+
+        }
+        if(!!data.file)
+        {
+          formData.append('attachment', data.file);
+
+        }
+        
 
         const response = await axios.postForm(
           `${baseURL}/user/send-message`,
