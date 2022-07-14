@@ -1,63 +1,66 @@
-import {View, Text, SafeAreaView, StyleSheet, Image} from 'react-native';
-import React, {useState, useEffect} from 'react';
-import Underline from '../components/Underline';
-import LinearGradient from 'react-native-linear-gradient';
-import Feather from 'react-native-vector-icons/Feather';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import {TextInput, TouchableOpacity} from 'react-native-gesture-handler';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, {useState} from 'react';
+import Underline from '../components/Underline';
+import {useAuth} from '../providers/AuthProvider';
+import Feather from 'react-native-vector-icons/Feather';
+import LinearGradient from 'react-native-linear-gradient';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import DocumentPicker from 'react-native-document-picker';
+import {View, Text, SafeAreaView, StyleSheet, Image} from 'react-native';
+import {
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+} from 'react-native-gesture-handler';
 
 const EditProfileScreen = ({navigation, route}) => {
   const userInfo = route.params.userInfo;
-  const [token, setToken] = useState('');
+  const {refreshAuthProfileData} = useAuth();
   const [imagePreview, setImagePreview] = useState('');
 
   const [data, setData] = React.useState({
-    Name: '',
-    Email: '',
-    Nib: '',
-    Phone: '',
-    DOB: '',
-    Address: '',
+    dob: '',
+    nib: '',
+    name: '',
+    phone: '',
+    email: '',
+    address: '',
   });
-  useEffect(() => {
-    getToken();
-  }, [token]);
-  const getToken = () => {
-    AsyncStorage.getItem('token').then(value => {
-      if (value != null) {
-        setToken(value);
-      }
-    });
-  };
+
+  React.useEffect(() => {
+    setData(prevData => ({
+      ...prevData,
+      name: userInfo?.name ?? '',
+      email: userInfo?.email ?? '',
+      nib: userInfo?.nib ?? '',
+      phone: userInfo?.phone ?? '',
+      dob: userInfo?.dob ?? '',
+      address: userInfo?.address ?? '',
+    }));
+
+    setImagePreview(userInfo?.photo ?? '');
+  }, [userInfo]);
 
   const handleSubmit = () => {
     const api = 'https://minister-app.com/api/user/profile';
-    const body = {
-      name: data.Name,
-      email: data.Email,
-      nib: data.Nib,
-      phone: data.Phone,
-      dob: data.DOB,
-      address: data.Address,
-    };
+    const body = Object.entries(data).reduce((acc, [key, val]) => {
+      if (!!val) {
+        acc[key] = val;
+      }
+      return acc;
+    }, {});
+
     try {
       axios
-        .put(api, body, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        .put(api, body)
+        .then(() => {
+          console.log('edited profile with data', data);
+          return refreshAuthProfileData();
         })
-        .then(res => {
-          if (res) {
-            if (res.data) {
-              navigation.goBack();
-            }
-          }
+        .then(() => {
+          navigation.goBack();
         })
-        .catch(error => console.log('error', error));
+        .catch(error => console.log('error', error.response));
     } catch (error) {
       console.log('error in getting order data : ', error);
     }
@@ -73,23 +76,14 @@ const EditProfileScreen = ({navigation, route}) => {
 
       const api = 'https://minister-app.com/api/user/profile';
 
-      var body = new FormData();
+      const body = new FormData();
       body.append('_method', 'PUT');
       body.append('photo', fileToUpload);
 
       axios
-        .post(api, body, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        })
-        .then(res => {
-          if (res) {
-            setImagePreview(res.data.photo);
-            console.log('res.data', res.data);
-            //setIsLoading(false);
-          }
+        .postForm(api, body)
+        .then(() => {
+          refreshAuthProfileData();
         })
         .catch(error => console.log('error', error.response.data));
     } catch (err) {
@@ -147,7 +141,7 @@ const EditProfileScreen = ({navigation, route}) => {
         <Underline width={210} />
       </View>
 
-      <View style={{padding: 15}}>
+      <ScrollView style={{padding: 15}}>
         <Text
           style={{
             color: '#193441',
@@ -158,14 +152,14 @@ const EditProfileScreen = ({navigation, route}) => {
           Name
         </Text>
         <TextInput
-          // value={userInfo.name}
+          value={data.name}
           style={{
             borderBottomWidth: 1,
             width: '100%',
             borderColor: 'rgba(25,52,65,0.5)',
             paddingVertical: 4,
           }}
-          onChangeText={val => setData({...data, Name: val})}
+          onChangeText={val => setData(prev => ({...prev, name: val}))}
         />
 
         <Text
@@ -178,14 +172,14 @@ const EditProfileScreen = ({navigation, route}) => {
           Email
         </Text>
         <TextInput
-          //  value={userInfo.email}
+          value={data.email}
           style={{
             borderBottomWidth: 1,
             width: '100%',
             borderColor: 'rgba(25,52,65,0.5)',
             paddingVertical: 4,
           }}
-          onChangeText={val => setData({...data, Email: val})}
+          onChangeText={val => setData(prev => ({...prev, email: val}))}
         />
 
         <Text
@@ -198,14 +192,14 @@ const EditProfileScreen = ({navigation, route}) => {
           NIB
         </Text>
         <TextInput
-          // value={userInfo.nib}
+          value={data.nib}
           style={{
             borderBottomWidth: 1,
             width: '100%',
             borderColor: 'rgba(25,52,65,0.5)',
             paddingVertical: 4,
           }}
-          onChangeText={val => setData({...data, Nib: val})}
+          onChangeText={val => setData(prev => ({...prev, nib: val}))}
         />
 
         <Text
@@ -218,14 +212,14 @@ const EditProfileScreen = ({navigation, route}) => {
           Phone
         </Text>
         <TextInput
-          // value={userInfo.phone}
+          value={data.phone}
           style={{
             borderBottomWidth: 1,
             width: '100%',
             borderColor: 'rgba(25,52,65,0.5)',
             paddingVertical: 4,
           }}
-          onChangeText={val => setData({...data, Phone: val})}
+          onChangeText={val => setData(prev => ({...prev, phone: val}))}
         />
 
         <Text
@@ -238,14 +232,15 @@ const EditProfileScreen = ({navigation, route}) => {
           Date of Birth
         </Text>
         <TextInput
-          //  value={userInfo.dob}
+          value={data.dob}
           style={{
             borderBottomWidth: 1,
             width: '100%',
             borderColor: 'rgba(25,52,65,0.5)',
             paddingVertical: 4,
           }}
-          onChangeText={val => setData({...data, Phone: val})}
+          placeholderText={'eg: Dec 01, 1996'}
+          onChangeText={val => setData(prev => ({...prev, dob: val}))}
         />
         <Text
           style={{
@@ -257,16 +252,16 @@ const EditProfileScreen = ({navigation, route}) => {
           Address
         </Text>
         <TextInput
-          // value={userInfo.address}
+          value={data.address}
           style={{
             borderBottomWidth: 1,
             width: '100%',
             borderColor: 'rgba(25,52,65,0.5)',
             paddingVertical: 4,
           }}
-          onChangeText={val => setData({...data, Address: val})}
+          onChangeText={val => setData(prev => ({...prev, address: val}))}
         />
-      </View>
+      </ScrollView>
       <TouchableOpacity onPress={handleSubmit}>
         <LinearGradient
           colors={['#11998E', '#0077B6']}

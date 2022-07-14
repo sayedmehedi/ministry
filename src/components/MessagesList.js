@@ -12,7 +12,10 @@ const MessagesList = ({onSwipeToReply, messages}) => {
 
   return (
     <ScrollView
-      style={{backgroundColor: 'white', flex: 1}}
+      style={{
+        flex: 1,
+        backgroundColor: 'white',
+      }}
       ref={ref => (scrollView.current = ref)}
       onContentChange={() => {
         scrollView.current.scrollToEnd({animated: true});

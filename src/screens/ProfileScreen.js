@@ -6,33 +6,17 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import Underline from '../components/Underline';
-import LinearGradient from 'react-native-linear-gradient';
+import {useAuth} from '../providers/AuthProvider';
 import Feather from 'react-native-vector-icons/Feather';
+import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {TouchableOpacity} from 'react-native-gesture-handler';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 const ProfileScreen = ({navigation}) => {
-  const [userInfo, setUserInfo] = useState();
-  const [isLoading, setIsLoading] = useState(true);
-  
-
-  useEffect(() => {
-    const api = 'https://minister-app.com/api/user/profile';
-    axios
-      .get(api)
-      .then(res => {
-        console.log(res.data.name);
-        setUserInfo(res.data);
-        setIsLoading(false);
-      })
-      .catch(e => console.log(e));
-  }, []);
- 
+  const {profileData: userInfo, isProfileDataLoading} = useAuth();
 
   return (
     <SafeAreaView style={{flex: 1}}>
@@ -61,11 +45,15 @@ const ProfileScreen = ({navigation}) => {
             justifyContent: 'space-between',
           }}>
           <Image
-            source={require('../assets/bg.png')}
+            source={
+              !!userInfo?.photo
+                ? {uri: userInfo.photo}
+                : require('../assets/bg.png')
+            }
             style={{height: 50, width: 50, borderRadius: 25}}
           />
           <View>
-            {!isLoading ? (
+            {!isProfileDataLoading ? (
               <Text style={{fontSize: 18, color: '#FFFFFF', fontWeight: '500'}}>
                 {userInfo.name}
               </Text>
@@ -92,7 +80,7 @@ const ProfileScreen = ({navigation}) => {
         </Text>
         <Underline width={270} />
       </View>
-      {isLoading ? (
+      {isProfileDataLoading ? (
         <ActivityIndicator size={'small'} color={'green'} />
       ) : (
         <View style={{padding: 15}}>

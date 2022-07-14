@@ -46,7 +46,10 @@ const ChatScreen = () => {
           <ActivityIndicator size={'large'} color={'blue'} />
         </View>
       ) : (
-        <MessagesList onSwipeToReply={swipeToReply} messages={messages} />
+        <MessagesList
+          onSwipeToReply={swipeToReply}
+          messages={messages.reverse()}
+        />
       )}
       <ChatInput
         reply={reply}
