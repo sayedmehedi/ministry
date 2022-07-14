@@ -8,42 +8,48 @@ export const useGetBlogs = () => {
   const [isError, setIsError] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isSuccess, setIsSuccess] = React.useState(false);
-  const controllerRef = React.useRef(new AbortController());
 
-  const getBlogs = React.useCallback(async () => {
-    try {
-      setIsLoading(true);
+  const getBlogs = React.useCallback(() => {
+    const controller = new AbortController();
+    setIsLoading(true);
+    axios
+      .get(`${baseURL}/user/blogs`, {
+        signal: controller.signal,
+      })
+      .then(response => {
+        const blogs = response.data;
 
-      const response = await axios.get(`${baseURL}/user/blogs`, {
-        signal: controllerRef.current.signal,
+        setError(null);
+        setData(blogs);
+        setIsError(false);
+        setIsSuccess(true);
+      })
+      .catch(error => {
+        console.log('error on getting blogs', error);
+
+        setError(error.response?.message ?? error.message);
+        setIsError(true);
+        setIsSuccess(false);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
-      const blogs = response.data;
 
-      setError(null);
-      setData(blogs);
-      setIsError(false);
-      setIsSuccess(true);
-    } catch (error) {
-      console.log('error on getting blogs', error);
-
-      setError(error);
-      setIsError(true);
-      setIsSuccess(false);
-    } finally {
-      setIsLoading(false);
-    }
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   const refetch = React.useCallback(() => {
-    console.log('refetching blog details');
-    getBlogs();
+    console.log('refetching blog list');
+    return getBlogs();
   }, [getBlogs]);
 
   React.useEffect(() => {
-    getBlogs();
+    const unsubscribe = getBlogs();
 
     return () => {
-      controllerRef.current.abort();
+      unsubscribe();
     };
   }, [getBlogs]);
 
@@ -63,80 +69,92 @@ export const useGetBlogDetails = id => {
   const [isError, setIsError] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isSuccess, setIsSuccess] = React.useState(false);
-  const controllerRef = React.useRef(new AbortController());
 
   const getBlogDetails = React.useCallback(
-    async id => {
+    id => {
+      const controller = new AbortController();
+
       if (!!id) {
-        try {
-          setIsLoading(true);
+        setIsLoading(true);
 
-          const response = await axios.get(`${baseURL}/user/blogs/${id}`, {
-            signal: controllerRef.current.signal,
+        axios
+          .get(`${baseURL}/user/blogs/${id}`, {
+            signal: controller.signal,
+          })
+          .then(response => {
+            const blog = response.data;
+
+            setData(blog);
+            setError(null);
+            setIsError(false);
+            setIsSuccess(true);
+          })
+          .catch(error => {
+            console.log('error on getting blog by id', error);
+            setError(error.response?.message ?? error.message);
+            setIsError(true);
+            setIsSuccess(false);
+          })
+          .finally(() => {
+            setIsLoading(false);
           });
-          const blog = response.data;
-
-          setData(blog);
-          setError(null);
-          setIsError(false);
-          setIsSuccess(true);
-        } catch (error) {
-          console.log('error on getting blog by id', error);
-          setError(error);
-          setIsError(true);
-          setIsSuccess(false);
-        } finally {
-          setIsLoading(false);
-        }
       }
+
+      return () => {
+        controller.abort();
+      };
     },
     [id],
   );
 
   const refetch = React.useCallback(() => {
     console.log('refetching blog details');
-    getBlogDetails(id);
+    return getBlogDetails(id);
   }, [getBlogDetails]);
 
   React.useEffect(() => {
-    getBlogDetails(id);
+    const unsubscribe = getBlogDetails(id);
 
     return () => {
-      controllerRef.current.abort();
+      unsubscribe();
     };
   }, [getBlogDetails]);
 
   return {data, isLoading, refetch, error, isError, isSuccess};
 };
 
-export const useCreateComment = () => {
+export const useCreateComment = ({onCreated} = {onCreated: undefined}) => {
   const [data, setData] = React.useState(null);
   const [error, setError] = React.useState(null);
   const [isError, setIsError] = React.useState(false);
   const [isSuccess, setIsSuccess] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const mutate = React.useCallback(async data => {
-    try {
-      setIsLoading(true);
-      const response = await axios.post(`${baseURL}/user/comments`, data);
-      const comment = response.data;
+  const mutate = React.useCallback(
+    async data => {
+      try {
+        setIsLoading(true);
+        const response = await axios.post(`${baseURL}/user/comments`, data);
+        const comment = response.data;
 
-      console.log('comment created', comment);
+        console.log('comment created', comment);
 
-      setError(null);
-      setData(comment);
-      setIsError(false);
-      setIsSuccess(true);
-    } catch (error) {
-      console.log('error on creating comment by id', error);
-      setError(error);
-      setIsError(true);
-      setIsSuccess(false);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+        setError(null);
+        setData(comment);
+        setIsError(false);
+        setIsSuccess(true);
+        onCreated?.(comment);
+      } catch (error) {
+        console.log('error on creating comment by id', error);
+        setError(error.response?.message ?? error.message);
+        setIsError(true);
+        setIsSuccess(false);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [onCreated],
+  );
 
   return {
     data,
@@ -148,33 +166,81 @@ export const useCreateComment = () => {
   };
 };
 
-export const useDeleteComment = () => {
+export const useDeleteComment = ({onDeleted} = {onDeleted: undefined}) => {
   const [data, setData] = React.useState(null);
   const [error, setError] = React.useState(null);
   const [isError, setIsError] = React.useState(false);
   const [isSuccess, setIsSuccess] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const mutate = React.useCallback(async id => {
-    try {
-      setIsLoading(true);
-      const response = await axios.delete(`${baseURL}/user/comments/${id}`);
-      const comment = response.data;
+  const mutate = React.useCallback(
+    async id => {
+      try {
+        setIsLoading(true);
+        const response = await axios.delete(`${baseURL}/user/comments/${id}`);
+        const comment = response.data;
 
-      console.log('comment deleted', comment);
-      setError(null);
-      setData(comment);
-      setIsSuccess(true);
-      setIsError(false);
-    } catch (error) {
-      console.log('error on deleting comment by id', error);
-      setError(error);
-      setIsError(true);
-      setIsSuccess(false);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+        console.log('comment deleted', comment);
+        setError(null);
+        setData(comment);
+        setIsSuccess(true);
+        setIsError(false);
+        onDeleted?.(comment);
+      } catch (error) {
+        console.log('error on deleting comment by id', error);
+        setError(error.response?.message ?? error.message);
+        setIsError(true);
+        setIsSuccess(false);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [onDeleted],
+  );
+
+  return {
+    data,
+    error,
+    mutate,
+    isError,
+    isSuccess,
+    isLoading,
+  };
+};
+
+export const useToggleBlogReaction = ({onReacted} = {onReacted: undefined}) => {
+  const [data, setData] = React.useState(null);
+  const [error, setError] = React.useState(null);
+  const [isError, setIsError] = React.useState(false);
+  const [isSuccess, setIsSuccess] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const mutate = React.useCallback(
+    async blogId => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get(
+          `${baseURL}/user/blogs/${blogId}/toggle-react`,
+        );
+        const reactionCount = response.data;
+
+        console.log('blog reacted', reactionCount);
+        setError(null);
+        setData(reactionCount);
+        setIsSuccess(true);
+        setIsError(false);
+        onReacted?.(reactionCount);
+      } catch (error) {
+        console.log('error on blog reacted by id', error);
+        setError(error.response?.message ?? error.message);
+        setIsError(true);
+        setIsSuccess(false);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [onReacted],
+  );
 
   return {
     data,

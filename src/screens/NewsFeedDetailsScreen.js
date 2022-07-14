@@ -20,7 +20,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import KeyboardAvoidingView from 'react-native/Libraries/Components/Keyboard/KeyboardAvoidingView';
 
-const ReactionAndCommentStats = ({commentId, onDeleted}) => {
+const CommentReactionAndCommentStats = ({commentId, onDeleted}) => {
   const [reacted, setReacted] = React.useState(false);
   const [showCommentOptions, setShowCommentOptions] = React.useState(false);
 
@@ -29,11 +29,12 @@ const ReactionAndCommentStats = ({commentId, onDeleted}) => {
     error: deleteCommentError,
     isLoading: isDeletingComment,
     isError: isCommentDeleteError,
-  } = useDeleteComment();
+  } = useDeleteComment({
+    onDeleted,
+  });
 
-  const handleDeleteComment = async () => {
-    await deleteComment(commentId);
-    onDeleted?.();
+  const handleDeleteComment = () => {
+    deleteComment(commentId);
   };
 
   React.useEffect(() => {
@@ -120,7 +121,10 @@ const CommentCard = ({data, onDeleted}) => {
         </View>
       </View>
       <View>
-        <ReactionAndCommentStats commentId={data?.id} onDeleted={onDeleted} />
+        <CommentReactionAndCommentStats
+          commentId={data?.id}
+          onDeleted={onDeleted}
+        />
       </View>
     </View>
   );
@@ -194,7 +198,7 @@ export default function NewsFeedDetailsScreen({route}) {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <NewsCard data={data} />
+      <NewsCard data={data} onReacted={refetch} />
 
       <CommentCreateInput onCommentCreated={refetch} blogId={route.params.id} />
 

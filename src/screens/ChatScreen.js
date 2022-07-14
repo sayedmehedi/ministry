@@ -1,11 +1,14 @@
 import React, {useState} from 'react';
-import {View} from 'react-native';
-import ChatHeader from '../components/ChatHeader';
+import {View, Text} from 'react-native';
+import {useGetMessages} from '../hooks/chat';
 import ChatInput from '../components/ChatInput';
+import ChatHeader from '../components/ChatHeader';
 import MessagesList from '../components/MessagesList';
 
 const ChatScreen = () => {
   const username = 'sayed mehedi hasan';
+
+  const {data: messages, isLoading, isError, error, refetch} = useGetMessages();
 
   const [reply, setReply] = useState('');
   const [isLeft, setIsLeft] = useState();
@@ -19,6 +22,12 @@ const ChatScreen = () => {
     setReply('');
   };
 
+  React.useEffect(() => {
+    if (isError) {
+      alert(error);
+    }
+  }, [isError, error]);
+
   return (
     <View style={{flex: 1}}>
       <ChatHeader
@@ -27,12 +36,17 @@ const ChatScreen = () => {
         picture="etest"
         onlineStatus={'Online'}
       />
-      <MessagesList onSwipeToReply={swipeToReply} />
+      {isLoading ? (
+        <Text>Loading...</Text>
+      ) : (
+        <MessagesList onSwipeToReply={swipeToReply} messages={messages} />
+      )}
       <ChatInput
         reply={reply}
         isLeft={isLeft}
-        closeReply={closeReply}
+        onSent={refetch}
         username={username}
+        closeReply={closeReply}
       />
     </View>
   );

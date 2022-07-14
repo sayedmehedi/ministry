@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import DocumentPicker from 'react-native-document-picker';
 import {
   View,
   Text,
@@ -13,8 +14,10 @@ import Animated, {
   useAnimatedStyle,
 } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import {useSendMessage} from '../hooks/chat';
 
-const ChatInput = ({reply, closeReply, isLeft, username}) => {
+const ChatInput = ({reply, closeReply, isLeft, username, onSent}) => {
+  const [file, setFile] = useState(null);
   const [message, setMessage] = useState('');
   const height = useSharedValue(70);
   const heightAnimatedStyle = useAnimatedStyle(() => {
@@ -22,6 +25,49 @@ const ChatInput = ({reply, closeReply, isLeft, username}) => {
       height: height.value,
     };
   });
+
+  const selectFile = async () => {
+    // Opening Document Picker to select one file
+    try {
+      const [fileToUpload = {uri, type, name}] = await DocumentPicker.pick({
+        // Provide which type of file you want user to pick
+        type: [DocumentPicker.types.images],
+      });
+
+      setFile(fileToUpload);
+    } catch (err) {
+      // Handling any exception (If any)
+      if (DocumentPicker.isCancel(err)) {
+        // If user canceled the document selection
+        alert('Canceled');
+      } else {
+        // For Unknown Error
+        alert('Unknown Error: ' + JSON.stringify(err));
+        throw err;
+      }
+    }
+  };
+
+  const {mutate, isLoading, isError, error} = useSendMessage({
+    onSent: () => {
+      onSent();
+      setMessage('');
+      setFile(null);
+    },
+  });
+
+  React.useEffect(() => {
+    if (isError) {
+      alert(error);
+    }
+  }, [isError, error]);
+
+  const handleSendMessage = () => {
+    mutate({
+      text: message,
+      file,
+    });
+  };
 
   return (
     <Animated.View style={[styles.container, heightAnimatedStyle]}>
@@ -37,7 +83,7 @@ const ChatInput = ({reply, closeReply, isLeft, username}) => {
         </View>
       ) : null}
       <View style={styles.innerContainer}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={selectFile}>
           <Icon name="paperclip" size={23} color={'#0077E6'} />
         </TouchableOpacity>
         <TouchableOpacity>
@@ -52,7 +98,10 @@ const ChatInput = ({reply, closeReply, isLeft, username}) => {
           onChangeText={text => setMessage(text)}
         />
 
-        <TouchableOpacity style={styles.sendButton}>
+        <TouchableOpacity
+          disabled={isLoading}
+          style={styles.sendButton}
+          onPress={handleSendMessage}>
           <Icon name={'send'} size={23} color={'white'} />
         </TouchableOpacity>
       </View>
