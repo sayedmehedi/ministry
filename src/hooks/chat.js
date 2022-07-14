@@ -2,29 +2,54 @@ import React from 'react';
 import axios from 'axios';
 import {baseURL} from '../../baseURL.json';
 
-export const useGetMessages = () => {
+export const useGetInfiniteMessages = () => {
   /** @type {(import("../typedefs").Message)[]} data - a foo */
+  const [page, setPage] = React.useState(1);
   const [data, setData] = React.useState([]);
   const [error, setError] = React.useState(null);
   const [isError, setIsError] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isSuccess, setIsSuccess] = React.useState(false);
+  const [hasNextPage, setHasNextPage] = React.useState(true);
+  const [messagesRecord, setMessagesRecord] = React.useState({});
+  const [isFetchingNextPage, setIsFetchingNextPage] = React.useState(false);
 
-  const getMessages = React.useCallback(() => {
+  React.useEffect(() => {
+    setData(
+      Object.values(messagesRecord).sort(
+        (a, b) => -a.created_at.localeCompare(b.created_at),
+      ),
+    );
+  }, [messagesRecord]);
+
+  const getMessages = React.useCallback((pageNumber = 1) => {
     const controller = new AbortController();
+
     setIsLoading(true);
     axios
-      .get(`${baseURL}/user/inbox`, {
+      .get(`${baseURL}/user/inbox?page=${pageNumber}`, {
         signal: controller.signal,
       })
 
       .then(response => {
-        const messages = response.data.data;
+        const messages = response.data.data.reduce((acc, curr) => {
+          acc[curr.id] = curr;
+          return acc;
+        }, {});
 
+        setMessagesRecord(prev => ({
+          ...prev,
+          ...messages,
+        }));
         setError(null);
-        setData(messages);
         setIsError(false);
         setIsSuccess(true);
+
+        if (!!response.data.next_page_url) {
+          setPage(prev => prev + 1);
+        }
+        console.log('next page url is', response.data.next_page_url);
+        setHasNextPage(response.data.next_page_url !== null);
       })
       .catch(error => {
         console.log('error on getting messages', error);
@@ -41,6 +66,54 @@ export const useGetMessages = () => {
       controller.abort();
     };
   }, []);
+
+  const fetchNextPage = () => {
+    console.log('fetching next page messages', page);
+    if (hasNextPage) {
+      const controller = new AbortController();
+
+      setIsFetchingNextPage(true);
+      axios
+        .get(`${baseURL}/user/inbox?page=${page}`, {
+          signal: controller.signal,
+        })
+
+        .then(response => {
+          const messages = response.data.data.reduce((acc, curr) => {
+            acc[curr.id] = curr;
+            return acc;
+          }, {});
+
+          setMessagesRecord(prev => ({
+            ...prev,
+            ...messages,
+          }));
+          setError(null);
+          setIsError(false);
+          setIsSuccess(true);
+
+          if (!!response.data.next_page_url) {
+            setPage(prev => prev + 1);
+          }
+          console.log('next page url is', response.data.next_page_url);
+          setHasNextPage(response.data.next_page_url !== null);
+        })
+        .catch(error => {
+          console.log('error on getting messages', error);
+
+          setError(error.response?.message ?? error.message);
+          setIsError(true);
+          setIsSuccess(false);
+        })
+        .finally(() => {
+          setIsFetchingNextPage(false);
+        });
+
+      return () => {
+        controller.abort();
+      };
+    }
+  };
 
   const refetch = React.useCallback(() => {
     console.log('refetching message list');
@@ -62,6 +135,8 @@ export const useGetMessages = () => {
     isError,
     isSuccess,
     isLoading,
+    fetchNextPage,
+    isFetchingNextPage,
   };
 };
 
@@ -77,18 +152,13 @@ export const useSendMessage = ({onSent} = {onSent: undefined}) => {
       try {
         setIsLoading(true);
         const formData = new FormData();
-        
-        if(!!data.text)
-        {
+
+        if (!!data.text) {
           formData.append('text', data.text);
-
         }
-        if(!!data.file)
-        {
+        if (!!data.file) {
           formData.append('attachment', data.file);
-
         }
-        
 
         const response = await axios.postForm(
           `${baseURL}/user/send-message`,

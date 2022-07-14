@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import {View, Text, ActivityIndicator} from 'react-native';
-import {useGetMessages} from '../hooks/chat';
+import {useGetInfiniteMessages} from '../hooks/chat';
 import ChatInput from '../components/ChatInput';
 import ChatHeader from '../components/ChatHeader';
 import MessagesList from '../components/MessagesList';
@@ -11,7 +11,15 @@ import axios from 'axios';
 const ChatScreen = () => {
   const username = 'sayed mehedi hasan';
 
-  const {data: messages, isLoading, isError, error, refetch} = useGetMessages();
+  const {
+    error,
+    refetch,
+    isError,
+    isLoading,
+    fetchNextPage,
+    data: messages,
+    isFetchingNextPage,
+  } = useGetInfiniteMessages();
 
   const [reply, setReply] = useState('');
   const [isLeft, setIsLeft] = useState();
@@ -47,8 +55,10 @@ const ChatScreen = () => {
         </View>
       ) : (
         <MessagesList
+          messages={messages}
+          onEndReached={fetchNextPage}
           onSwipeToReply={swipeToReply}
-          messages={messages.reverse()}
+          isFetchingNextPage={isFetchingNextPage}
         />
       )}
       <ChatInput
